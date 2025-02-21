@@ -23,7 +23,8 @@
             Numero Orden {{ data.idOrdenLavado }}
             <br>
             <p class="mt-3" v-if="this.data.folio != null">Folio: {{ this.data.folio }}</p>
-            <strong v-if="this.data.fhAlta">Fecha Registro {{ obtenerFechaBonita(this.data.fhAlta) }}</strong>
+            <strong v-if="this.data.fhAlta">Fecha Registro {{ obtenerFechaBonita(this.data.fhAlta) }}</strong><br>
+            <strong v-if="this.data.fechaEntrega">Fecha Entrega {{ obtenerFechaBonita(this.data.fechaEntrega) }}</strong>
             <br>
             <p v-if="data.infoLavadora != null">
                 Lavadora {{ data.infoLavadora.lavadora }}

@@ -41,15 +41,23 @@
                                                                 />
                                                             </div>
                                                         </b-col>
-                                                        <b-col lg="6" sm="6" class="mt-5">
+                                                        <b-col lg="4" sm="6" class="mt-5">
+                                                            <vs-input type="date" size="large" v-model="fechaEntrada" primary label-placeholder="Fecha de Entrada" >
+                                                                <template #icon>
+                                                                    <box-icon name='calendar' ></box-icon>
+                                                                </template>
+                                                            </vs-input>
+                                                        </b-col>
+                                                        
+                                                        <b-col lg="4" sm="6" class="mt-5">
                                                             <vs-input type="date" size="large" v-model="fechaEntrega" primary label-placeholder="Fecha de entrega" :min="minDate">
                                                                 <template #icon>
                                                                     <box-icon name='calendar' ></box-icon>
                                                                 </template>
                                                             </vs-input>
                                                         </b-col>
-                                                        <b-col lg="6" sm="6">
-                                                        </b-col>
+                                                        <b-col lg="4" sm="6" class="mt-5"></b-col>
+                                                        
                                                     </b-row>
                                                 </b-list-group-item>
                                                 <b-list-group-item>
@@ -193,21 +201,29 @@ export default {
         SelectCliente: '',
         nombrePrenda: '',
         fechaEntrega: '',
+        fechaEntrada: '',
         SelectPrenda: '',
         cantidad: '',
         folio: '',
         contador: 0,
         error: [],
         prendas: [],
+        fechaActual: new Date(),
         iniciarProceso: false,
         url: process.env.VUE_APP_SERVICE_URL_API, activarReboot: false,
 
     }),
     computed: {
-    minDate() {
-        const today = new Date(); // Obtiene la fecha actual
-        today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00
-        return today.toISOString().split('T')[0]; // Devuelve la fecha actual en formato YYYY-MM-DD
+        minDate() {
+            const today = new Date(); // Obtiene la fecha actual
+            today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00
+            return today.toISOString().split('T')[0]; // Devuelve la fecha actual en formato YYYY-MM-DD
+        },
+        fechaFormateada() {
+            const año = this.fechaActual.getFullYear();
+            const mes = String(this.fechaActual.getMonth() + 1).padStart(2, '0');
+            const dia = String(this.fechaActual.getDate()).padStart(2, '0');
+            return `${año}-${mes}-${dia}`;
         },
     },
     components: {
@@ -392,9 +408,12 @@ export default {
             this.contador = 0
             let token = this.$session.get('token')
 
+            let fechaOptional = this.fechaEntrada == '' ? this.fechaFormateada  :  this.fechaEntrada
+
             let json = {
                 "idCliente": this.SelectCliente,
                 "fechaEntrega": this.fechaEntrega,
+                "FechaEntrada": fechaOptional,
                 "ordenPrendas": this.prendas,
                 "numEnvio": this.folio
 

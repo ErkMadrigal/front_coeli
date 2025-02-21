@@ -9,9 +9,10 @@
             <b-skeleton type="input" class="mt-2" v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"></b-skeleton>
         </b-card>        
         <b-card :style="{ 'border-left': `solid 5px #0d6efd !important` }" v-else :title="data.nomCliente" :sub-title="data.nombrePrenda">
-            <div class='badge bg-primary text-wrap float-end mb-2' >
+            <div class='badge bg-primary text-wrap float-end mb-2'>
                 Paso {{ data.npaso }}
             </div>
+
             <strong>{{ data.descripcionEstado }}</strong>
             <br>
            
@@ -84,7 +85,10 @@
                                     <strong>{{ detail.nombre }}</strong>
                                 </div>
                             </div>
-                            cantidad: <b>{{ detail.cantidadBolsa }}</b> <br>
+                            cantidad por bolsa: <b>{{ detail.cantidadBolsa }}</b> <br>
+                            cantidad prendas: <b>{{ data.cantidadPrendas }}  <box-icon name='edit' color="#0d6efd" v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))" @click="editCantidades"></box-icon></b>
+                           
+                            <br>
                             tipo de lavado:<b> {{detail.proceso.nombre}} ({{ detail.proceso.codigo}})</b> 
                             <br>
                             <hr>
@@ -96,20 +100,16 @@
                                     <h3>Pasos:</h3>
                                 </v-timeline-item>
                                 <br>
-                                <v-timeline-item dot-color="grey" class="mb-4" size="small"  v-for="(paso, i) in detail.proceso.pasos" :key="i">
+                                <v-timeline-item dot-color="teal-lighten-3" class="mb-4" size="small"  v-for="(paso, i) in detail.proceso.pasos" :key="i">
                                     <template v-slot:icon>
                                         <small class="pt-1 headline font-weight-bold">{{prefijos(paso.nombre)}}</small>
                                     </template>
-                                    <vs-card>
-                                        <template #title>
-                                            <h3>{{paso.nombre}}</h3>
-                                        </template>
-                                        <template #text>
-                                            <p>
-                                                {{paso.descripcion}}
-                                            </p>
-                                        </template>
-                                    </vs-card>
+                                    <b-card :style="data.npaso == paso.orden ? { 'border-left': 'solid 5px #0d6efd !important' } : {}" 
+                                            :title="paso.nombre" 
+                                            :sub-title="paso.descripcion"
+                                            @click="selectPaso"
+                                            >
+                                    </b-card>
                                 </v-timeline-item>
                             </v-timeline>
                         </b-card>
@@ -168,6 +168,59 @@
                 </template>
                 <ConfirmComponent @confirm="cancelPrednas"/>
             </vs-dialog>
+            <vs-dialog v-model="movePaso">
+                <template #header>
+                    <h4 class="not-margin">
+                        Estas seguro que moverlo <b>al paso indicado?</b>
+                    </h4>
+                </template>
+                <ConfirmComponent @confirm="regresando"/>
+            </vs-dialog>
+            <vs-dialog blur v-model="editCount">
+                <template #header>
+                    <h4 class="not-margin">
+                        deseas modificar la cantidad de <b>{{data.nombrePrenda}}?</b>
+                    </h4>
+                </template>
+                <div class="con-form">
+                    <template>
+                        <p>Cantidad <b>{{ data.cantidadPrendas }}</b></p>
+                        <div class="center content-inputs">
+                            <vs-input danger type="text" v-model="motivoElim" label-placeholder="Describe el motivo">
+                                <template #icon>
+                                    <box-icon name='rename'></box-icon>
+                                </template>
+                            </vs-input>
+                        </div>
+                        <div class="center content-inputs">
+                            <vs-input danger type="number" v-model="cantidadElim" label-placeholder="Digita una cantidad">
+                                <template #icon>
+                                    <box-icon name='dialpad-alt' ></box-icon>
+                                </template>
+                            </vs-input>
+                        </div>
+                    </template>
+                </div>
+
+                <template #footer>
+                    <div class="con-footer mt-4">
+                        <vs-button danger
+                            block
+                            flat
+                            @click="comfirmCount=!comfirmCount">
+                            Modificar
+                        </vs-button>
+                    </div>
+                </template>
+            </vs-dialog>
+            <vs-dialog v-model="comfirmCount">
+                <template #header>
+                    <h4 class="not-margin">
+                        Estas seguro que deseas <b>Modifcar la Cantidad?</b>
+                    </h4>
+                </template>
+                <ConfirmComponent @confirm="modificarCount"/>
+            </vs-dialog>
             
         </b-card>
         <div v-if="activarReboot">
@@ -205,15 +258,31 @@ export default {
         modalShowDetail: false,
         render: true,
         iniciarProceso: false, 
-
+        movePaso: false,
+        editCount: false,
+        comfirmCount: false,
         comfirm: false,
+        textAlertConfirm: '',
         pathname: window.location.pathname,
         url: process.env.VUE_APP_SERVICE_URL_API, activarReboot: false,
     }),
+    computed: {
+        
+    },
     components: {
         loginComponent,
         ConfirmComponent,
 
+    },
+    watch: {
+        data: {
+            immediate: true, // Coma añadida aquí
+            handler(newVal) { // Sin punto y coma aquí
+                if (newVal) {
+                    this.mostrarDetailPrendas(newVal.idPrenda);
+                }
+            }
+        }
     },
     mounted(){
         let fecha=new Date(this.data.fechaInicio);
@@ -231,6 +300,27 @@ export default {
                 this.$session.start()
                 this.$session.set('token', data.datos.token)
             }) 
+        },
+        editCantidades(){
+            this.textAlertConfirm = 
+            this.editCount = true;
+            this.modalShowDetail= false;
+        },
+        async modificarCount(){
+            if(status == 200){
+                console.log("modificarCantidad...")
+            }
+        },
+        selectPaso(){
+            if(this.$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))){
+                this.movePaso = true;
+                this.modalShowDetail= false;
+            }
+        },
+        async regresando(status){
+            if(status == 200){
+                console.log("regresando...")
+            }
         },
         cancel(){
             this.modalShowDetail = false
@@ -420,6 +510,10 @@ input {
     max-width: 100% !important;
 }
 
+
+.card {
+    min-height: 4rem !important;
+}
 
 </style>
 <style lang="stylus">

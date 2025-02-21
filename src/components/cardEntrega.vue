@@ -10,15 +10,15 @@
             </b-card>        
             <b-card v-else :title="nomCli" :style="{ 'border-left': `solid 5px #0d6efd !important` }">
                 <div class="badge bg-success text-wrap float-end" >
-                    {{ data.dt.nombreEstado }}
+                    {{ data.nombreEstado }}
                 </div>
                 <p class="fw-light text-muted">Clave Cliente {{ claveCli }}</p>
-                <p class="fw-light text-muted">Folio {{ data.dt.numEnvio }}</p>
-                <p class="fw-light text-muted">Id Orden {{ data.dt.idOrden }}</p>
-                <p class="fw-light text-muted">Entrega <b>{{ fecha(data.dt.fechaEntrega) }}</b></p>
-                <p class="fw-light text-muted">Llegada <b>{{ fecha(data.dt.fechaRecepcion) }}</b></p>
-                <p class="fw-light text-muted">Tiempo Proceso {{ difFecha(data.dt.prendas[0].fechaAlta, data.dt.prendas[0].ultimoEstado) }}</p>
-                <vs-button block primary @click="entregar(data.dt.idOrden)"> Entregar </vs-button>
+                <p class="fw-light text-muted">Folio {{ data.numEnvio }}</p>
+                <p class="fw-light text-muted">Id Orden {{ data.idOrden }}</p>
+                <p class="fw-light text-muted">Entrega <b>{{ fecha(data.fechaEntrega) }}</b></p>
+                <p class="fw-light text-muted">Llegada <b>{{ fecha(data.fechaRecepcion) }}</b></p>
+                <p class="fw-light text-muted">Tiempo Proceso {{ difFecha(data.prendas[0].fechaAlta, data.prendas[0].ultimoEstado) }}</p>
+                <vs-button block primary @click="entregar(data.idOrden)"> Entregar </vs-button>
                 <vs-button block success @click="mostraCliDetail"> Ver Detalles </vs-button>
                 <b-modal size="lg" centered v-model="modalShowDetail">
                     <template #modal-header="{ close }">
@@ -166,11 +166,23 @@ export default {
         // ConfirmComponent,
         loginComponent
     },
+    watch: {
+        data: {
+            immediate: true, // Coma añadida aquí
+            handler(newVal) { // Sin punto y coma aquí
+                if (newVal) {
+                    this.mostraCli();
+                }
+            }
+        }
+    },
     mounted(){
-        this.mostraCli()
+
+        console.log("arreglo", this.data)
         setTimeout(() => {
             this.render = false
-        }, 100)   
+            this.mostraCli()
+        }, 100) 
     },
     methods: {
         refresh(){
@@ -189,7 +201,7 @@ export default {
             let fechaCortaF = final.split("T")
             let fecha1 = moment(`${fechaCortaI[0]} ${fechaCortaI[1].split(".")[0]}`, "YYYY-MM-DD HH:mm:ss")
             let fecha2 = moment(`${fechaCortaF[0]} ${fechaCortaF[1].split(".")[0]}`, "YYYY-MM-DD HH:mm:ss")
-            console.log(fecha2.diff(fecha1, 'h'))
+            // console.log(fecha2.diff(fecha1, 'h'))
             let res = ''
             let diff = fecha2.diff(fecha1, 'd')
 
@@ -213,7 +225,7 @@ export default {
             return letras.join("")+terminacion
         },
         async mostraCli(){
-            fetchApi(this.url+`cliente/findById/${this.data.dt.idCliente}`, 'GET', this.$session.get('token'))
+            fetchApi(this.url+`cliente/findById/${this.data.idCliente}`, 'GET', this.$session.get('token'))
             .then(data => {
                 if(data.status == 401){ this.activarReboot = true }
                 if(data.status == 200){
@@ -242,7 +254,7 @@ export default {
         async mostraCliDetail(){
             this.modalShowDetail = true
             // this.prendas = []
-            this.data.dt.prendas.forEach( prenda => {
+            this.data.prendas.forEach( prenda => {
                 fetchApi(this.url+`prenda/findById/${prenda.idPrenda}`, 'GET', this.$session.get('token'))
                 .then(data => {
                     if(data.status == 401){ this.activarReboot = true }

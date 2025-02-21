@@ -55,11 +55,45 @@
                     </b-tab>
                     <b-tab title="Procesando"  @click="updatePage(200)" >
                         <b-row>
-                            <b-col class="mt-4" lg="3" md="4" sm="6" v-for="(cp, i) in consultasProcesando" :key="i">
+                            <b-col class="mt-4" lg="12" md="12" sm="12">
+                                <!-- Transición para animar la expansión/contracción -->
+                                <transition name="scale-in-hor-left">
+                                    <b-card v-if="isExpanded" class="expanded-card">
+                                        <!-- Botón de cerrar -->
+                                        <div class="close-btn" @click="contractCard">
+                                            <box-icon name='x' color="#007bff"></box-icon>
+                                        </div>
+
+                                        <!-- Título "Buscar Orden" -->
+                                        <h4 class="mb-4">Buscar Orden</h4>
+
+                                        <!-- Campo de búsqueda -->
+                                        <vs-input
+                                            ref="buscarPrenda"
+                                            primary
+                                            class="mt-4"
+                                            block
+                                            type="text"
+                                            icon-after
+                                            v-model="searchQueryP"
+                                        >
+                                            <template #icon>
+                                                <box-icon name='search-alt-2' color="#007bff"></box-icon>
+                                            </template>
+                                        </vs-input>
+                                    </b-card>
+                                </transition>
+
+                                <!-- Ícono de lupa (solo visible cuando el card no está expandido) -->
+                                <div v-if="!isExpanded" class="icon-only" @click="expandCard">
+                                    <box-icon name='search-alt-2' color="#007bff"></box-icon>
+                                </div>
+                            </b-col>
+                            <b-col class="mt-4" lg="3" md="4" sm="6" v-for="(cp, i) in filteredConsultasP" :key="i">
                                 <CardProcesandoPrendaComponent v-if="cp.idEstado" @updatePage="updatePage" :data="cp"></CardProcesandoPrendaComponent>
                             </b-col>
                         </b-row>            
-                        <vs-alert class="mt-5" v-if="sinDataProcesando" shadow danger>
+                        <vs-alert class="mt-5" v-if="filteredConsultasP.length === 0" shadow danger>
                             <template #title>
                                 No se han encontrado datos
                             </template>
@@ -85,7 +119,9 @@ import loginComponent from '@/components/cardLogin.vue';
 export default {
     data: () => ({
         searchQuery: "",
+        searchQueryP: "",
         filteredConsultas: [],
+        filteredConsultasP: [],
         consultas: [],
         sinData: false,
         sinDataProcesando: false,
@@ -140,7 +176,9 @@ export default {
                         (consulta.nombreSigPaso && consulta.nombreSigPaso.toLowerCase().includes(query))||
                         (consulta.tipoLavado && consulta.tipoLavado.toLowerCase().includes(query))||
                         (consulta.folio && consulta.folio.toLowerCase().includes(query))||
-                        (consulta.descripcionEstado && consulta.descripcionEstado.toLowerCase().includes(query))
+                        (consulta.descripcionEstado && consulta.descripcionEstado.toLowerCase().includes(query))||
+                        (this.obtenerFechaBonita(consulta.fechaEntrega) && this.obtenerFechaBonita(consulta.fechaEntrega).toLowerCase().includes(query))||
+                        (this.obtenerFechaBonita(consulta.fhAlta) && this.obtenerFechaBonita(consulta.fhAlta.toLowerCase()).includes(query))
                     );
                 });
             } else {
@@ -148,6 +186,31 @@ export default {
                 this.filteredConsultas = this.consultas;
             }
             console.log(this.filteredConsultas)
+
+
+        },
+        filterConsultasP() {
+            if (this.searchQueryP) {
+                const query = this.searchQueryP.toLowerCase(); // Convertir a minúsculas para búsqueda insensible a mayúsculas
+                this.filteredConsultasP = this.consultasProcesando.filter(consulta => {
+                    // Buscar en todas las propiedades relevantes
+                    return (
+                        (consulta.nomCliente && consulta.nomCliente.toLowerCase().includes(query)) ||
+                        (consulta.nombrePaso && consulta.nombrePaso.toLowerCase().includes(query)) ||
+                        (consulta.nombrePrenda && consulta.nombrePrenda.toLowerCase().includes(query))||
+                        (consulta.nombreSigPaso && consulta.nombreSigPaso.toLowerCase().includes(query))||
+                        (consulta.tipoLavado && consulta.tipoLavado.toLowerCase().includes(query))||
+                        (consulta.folio && consulta.folio.toLowerCase().includes(query))||
+                        (consulta.descripcionEstado && consulta.descripcionEstado.toLowerCase().includes(query))||
+                        (this.obtenerFechaBonita(consulta.fechaEntrega) && this.obtenerFechaBonita(consulta.fechaEntrega).toLowerCase().includes(query))||
+                        (this.obtenerFechaBonita(consulta.fhAlta) && this.obtenerFechaBonita(consulta.fhAlta.toLowerCase()).includes(query))
+                    );
+                });
+            } else {
+                // Si no hay texto de búsqueda, muestra todas las cards
+                this.filteredConsultasP = this.consultasProcesando;
+            }
+            console.log(this.filteredConsultasP)
 
 
         },
@@ -169,6 +232,7 @@ export default {
                         });
                         // Actualiza filteredConsultas con los datos cargados
                         this.filteredConsultas = this.consultas;
+                        this.filteredConsultasP = this.consultasProcesando;
                     } else {
                         if (this.consultas.length == 0) {
                             this.sinData = true;
@@ -183,6 +247,19 @@ export default {
             if(status == 200){
                 this.mostratConsultas()
             }
+        },
+        obtenerFechaBonita(fechaParametro) {
+            const fecha = new Date(fechaParametro);
+
+            const opciones = {
+                day: '2-digit',  
+                month: '2-digit',
+                year: 'numeric',
+            };
+
+            const formatoFecha = new Intl.DateTimeFormat('es-ES', opciones);
+
+            return formatoFecha.format(fecha);
         },
         openNotification( title, text, color, position = null, icon) {
           this.$vs.notification({
@@ -199,6 +276,10 @@ export default {
         searchQuery() {
             // Observa cambios en el texto de búsqueda y filtra las cards
             this.filterConsultas();
+        },
+        searchQueryP() {
+            // Observa cambios en el texto de búsqueda y filtra las cards
+            this.filterConsultasP();
         },
     },
 
