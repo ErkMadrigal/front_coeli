@@ -8,22 +8,45 @@
                 <b-skeleton type="button" width="100%" class="mb-2"></b-skeleton>
                 <b-skeleton type="button" width="100%"></b-skeleton>
             </b-card>        
-            <b-card v-else :title="data.data.nomCliente" :style="{ 'border-left': `solid 5px #0d6efd !important` }">
-                <small>{{ data.data.prenda }}</small>
+            <b-card v-else-if="data.nombreEstado === 'TERMINADO'" :title="data.nomCliente" :style="{ 'border-left': `solid 5px #0d6efd !important` }">
+                <small>{{ data.prenda }}</small>
                 <div class="badge bg-success text-wrap float-end" >
-                    {{ data.data.nombreEstado }}
+                    {{ data.nombreEstado }}
                 </div>
-                <vs-button circle icon floating primary @click="imprimirTicket(data.data.idOrdenPrena)">
+                <vs-button circle icon floating primary @click="imprimirTicket(data.idOrdenPrena)">
                     <box-icon name='printer' color="#fff"></box-icon>
                 </vs-button>
-                <p class="fw-light text-muted">id Orden {{ data.data.idOrden }}.</p>
+                <p class="fw-light text-muted">id Orden {{ data.idOrden }}.</p>
+                <p class="fw-light text-muted">Folio: {{data.folio}}</p>
+
                 <p>{{ date }}</p>
                 cantidad de prendas
                 <div class="badge bg-success text-wrap float-end" >
-                    {{ data.data.cantidad }}
+                    {{ data.cantidad }}
                 </div>
                 <br>
                 <br>
+            </b-card>
+            <b-card v-else :title="data.nomCliente" :style="{ 'border-left': `solid 5px #ffc107 !important` }" >
+                <small>{{ data.prenda }}</small>
+                <div class="badge bg-warning text-wrap float-end" >
+                    Pendiente
+                </div>
+                <vs-button circle icon floating primary @click="imprimirTicket(data.idOrdenPrena)">
+                    <box-icon name='printer' color="#fff"></box-icon>
+                </vs-button>
+                <p class="fw-light text-muted">Folio: {{data.folio}}</p>
+                <p>{{ date }}</p>
+                <br>
+                Prendas Terminadas
+                <div class="badge bg-success text-wrap" >
+                    {{ data.cantidadTerminada }}
+                </div>
+                <br>
+                Prendas Pendientes
+                <div class="badge bg-warning text-wrap" >
+                    {{ data.cantidadTotal - data.cantidadTerminada}}
+                </div>
             </b-card>
             <div v-if="activarReboot">
                 <loginComponent :login="activarReboot"></loginComponent>
@@ -55,14 +78,17 @@ export default {
         loginComponent
     },
     mounted(){
-        moment.locale('es');  
-        let fechaIngreso = this.data.data.ultimoEstado.split('T')
-        let horaIngreso = fechaIngreso[1].split('.')[0]
-        let fechaHora = fechaIngreso[0]+" "+horaIngreso
-        this.date = moment(fechaHora).startOf('hour').fromNow()
+        if(this.data.ultimoEstado){
+            moment.locale('es');  
+            let fechaIngreso = this.data.ultimoEstado.split('T')
+            let horaIngreso = fechaIngreso[1].split('.')[0]
+            let fechaHora = fechaIngreso[0]+" "+horaIngreso
+            this.date = moment(fechaHora).startOf('hour').fromNow()
+        }
         setTimeout(() => {
             this.render = false
         }, 1000)   
+
     },
     methods: {
         refresh(){

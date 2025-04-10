@@ -8,7 +8,7 @@
                 <b-tabs content-class="mt-3" align="center"  @click="updatePage(200)">
                     <b-tab title="Ordenes Concluidas"  @click="updatePage(200)" active>
                         <b-row>
-                            <b-col class="mt-4" lg="12" md="12" sm="12">
+                            <b-col lg="12" md="12" sm="12">
                                 <!-- Transición para animar la expansión/contracción -->
                                 <transition name="scale-in-hor-left">
                                     <b-card v-if="isExpanded" class="expanded-card">
@@ -42,7 +42,7 @@
                                     <box-icon name='search-alt-2' color="#007bff"></box-icon>
                                 </div>
                             </b-col>
-                            <b-col  class="mt-4" lg="3" md="4" sm="6" v-for="(dt, i) in filteredConsultasO" :key="i">
+                            <b-col lg="3" md="4" sm="6" v-for="(dt, i) in filteredConsultasO" :key="i">
                                 <EntregasComponent @updatePage="updatePage" :data="dt"></EntregasComponent>
                             </b-col>
                         </b-row>
@@ -54,11 +54,11 @@
                     </b-tab>
                     <b-tab title="Prendas Concluidas" @click="updatePage(200)">
                         <b-row>
-                            <b-col  class="mt-4" lg="3" md="4" sm="6" v-for="(dt, i) in filteredConsultasP" :key="i">
-                                <ProcesandoComponent @updatePage="updatePage" :data="{data:dt}"></ProcesandoComponent>
+                            <b-col lg="3" md="4" sm="6" v-for="(dt, i) in filteredConsultasP" :key="i">
+                                <ProcesandoComponent @updatePage="updatePage" :data="dt"></ProcesandoComponent>
                             </b-col>
                         </b-row>
-                        <vs-alert class="mt-5" v-if="filteredConsultasP.length === 0" shadow danger>
+                        <vs-alert class="mt-5" v-if="filteredConsultasP.length == 0" shadow danger>
                             <template #title>
                                 No se han encontrado datos
                             </template>
@@ -147,14 +147,13 @@ export default {
                 // Si no hay texto de búsqueda, muestra todas las cards
                 this.filteredConsultasO = this.getDatos[0];
             }
-            console.log(this.filteredConsultasO)
 
 
         },
         filterConsultasP() {
             if (this.searchQueryP) {
                 const query = this.searchQueryP.toLowerCase(); // Convertir a minúsculas para búsqueda insensible a mayúsculas
-                this.filteredConsultasP = this.getDatos[1].filter(consulta => {
+                this.filteredConsultasP = [...this.getDatos[1], ...this.getDatos[2]].filter(consulta => {
                     // Buscar en todas las propiedades relevantes
                     return (
                         (consulta.nomCliente && consulta.nomCliente.toLowerCase().includes(query)) ||
@@ -163,17 +162,15 @@ export default {
                         (consulta.nombreSigPaso && consulta.nombreSigPaso.toLowerCase().includes(query))||
                         (consulta.tipoLavado && consulta.tipoLavado.toLowerCase().includes(query))||
                         (consulta.folio && consulta.folio.toLowerCase().includes(query))||
-                        (consulta.descripcionEstado && consulta.descripcionEstado.toLowerCase().includes(query))||
-                        (this.fecha(consulta.fechaEntrega) && this.fecha(consulta.fechaEntrega).toLowerCase().includes(query))||
-                        (this.fecha(consulta.fhAlta) && this.fecha(consulta.fhAlta.toLowerCase()).includes(query))
+                        (consulta.descripcionEstado && consulta.descripcionEstado.toLowerCase().includes(query))
+                        // (this.fecha(consulta.fechaEntrega) && this.fecha(consulta.fechaEntrega).toLowerCase().includes(query))||
+                        // (this.fecha(consulta.fhAlta) && this.fecha(consulta.fhAlta.toLowerCase()).includes(query))
                     );
                 });
             } else {
                 // Si no hay texto de búsqueda, muestra todas las cards
-                this.filteredConsultasP = this.getDatos[1];
+                this.filteredConsultasP = [...this.getDatos[1], ...this.getDatos[2]];
             }
-            // console.log(this.filteredConsultasP)
-
 
         },
         async mostraPrendas(){
@@ -190,13 +187,11 @@ export default {
                     }
 
                     this.filteredConsultasO = this.getDatos[0];
-                    this.filteredConsultasP = this.getDatos[1];
+                    this.filteredConsultasP = [...this.getDatos[1], ...this.getDatos[2]];
                 }else{
                     this.getDatos = []
                 }
                 
-                // console.log(this.getDatos)
-
             })
             .catch(err => console.log(err))
         },

@@ -3,66 +3,32 @@
         <HeaderComponent/>
         <br>
     
-        <b-container fluid class="mt-4 container">
-            
+        <b-container fluid class="mt-5 container">
+    
             <b-row class="align-items-end">
                 
                 <b-col md="4" sm="12">
-                    <vs-button flat block icon @click="activeModal=!activeModal">
-                        <box-icon name='wind' color="#195bff"></box-icon> Agregar Prendas
+                    <vs-button class="my-0 mb-3" flat block icon @click="activeModal=!activeModal">
+                        <box-icon name='notepad' color="#195bff"></box-icon>Agregar Motivo Cancelacion
                     </vs-button>
                     <vs-dialog v-model="activeModal">
                         <template #header>
                         <h4 class="not-margin">
-                            Registrar <b>Prendas</b>
+                            Registrar <b>Motivo Cancelacion</b>
                         </h4>
                         </template>
             
                         <div class="con-form">
-                            <vs-input class="mt-3" success type="text" v-model="nombre" label-placeholder="Nombre">
+                            <vs-input success type="text" v-model="motivo" placeholder="Motivo">
                                 <template #icon>
-                                    <box-icon name='wind'></box-icon>
+                                    <box-icon name='note' type='solid' ></box-icon>
                                 </template>
                             </vs-input>
-                            <vs-input class="mt-3" success type="text" v-model="descripcion" label-placeholder="Descripcion">
+                            <vs-input success type="text" v-model="descripcion" placeholder="Descripcion">
                                 <template #icon>
-                                    <box-icon name='wind'></box-icon>
+                                    <box-icon name='notepad' ></box-icon>
                                 </template>
                             </vs-input>
-                            <vs-input class="mt-3" success type="text" v-model="kilos" label-placeholder="Cantidad por kilos">
-                                <template #icon>
-                                    <box-icon name='wind'></box-icon>
-                                </template>
-                            </vs-input>
-                            <vs-input class="mt-3" success type="text" v-model="cantidadBolsa" label-placeholder="Cantidad de prendas por bolsa">
-                                <template #icon>
-                                    <box-icon name='wind'></box-icon>
-                                </template>
-                            </vs-input>
-                            <div class="con-selects mt-4">
-                                <b-skeleton type="input" v-if="clientes.length == 0"></b-skeleton>
-                                <v-select
-                                    v-model="cliente"
-                                    :options="clientes"
-                                    label="nombre"
-                                    placeholder="Cliente"
-                                    :reduce="option => option.id"
-                                    :searchable="true"
-                                    :clearable="false"
-                                />
-                            </div>
-                            <div class="con-selects mt-5">
-                                <b-skeleton type="input" v-if="tiposProceso.length == 0"></b-skeleton>
-                                <v-select
-                                    v-model="tipoProceso"
-                                    :options="tiposProceso"
-                                    label="nombre"
-                                    placeholder="Tipo de proceso"
-                                    :reduce="option => option.id"
-                                    :searchable="true"
-                                    :clearable="false"
-                                />
-                            </div>
                         </div>
                         <br>
                         <template #footer>
@@ -70,15 +36,16 @@
                                 <vs-button block success
                                     flat
                                     :btnGuardar="btnGuardar == 1"
-                                    @click="addPrenda()">
+                                    @click="add()">
                                     Guardar
                                 </vs-button>
                             </div>
                         </template>
                     </vs-dialog>
                 </b-col>
-                <b-col md="8" sm="12"></b-col>
-
+                <b-col md="8" sm="12">
+                    
+                </b-col>
                 <b-col md="6" sm="6">
                     <b-form-group
                         label="registros"
@@ -108,21 +75,23 @@
                     label-size="sm"
                     class="mb-0"
                     >
-                    <b-input-group size="sm">
-                        <b-form-input
-                        id="filter-input"
-                        v-model="filter"
-                        type="search"
-                        placeholder="Buscar"
-                        ></b-form-input>
+                        <b-input-group size="sm">
+                            <b-form-input
+                            id="filter-input"
+                            v-model="filter"
+                            type="search"
+                            placeholder="Buscar"
+                            ></b-form-input>
 
-                        <b-input-group-append>
-                        <b-button :disabled="!filter" @click="filter = ''" variant="danger">X</b-button>
-                        </b-input-group-append>
-                    </b-input-group>
+                            <b-input-group-append>
+                            <b-button :disabled="!filter" @click="filter = ''" variant="danger">X</b-button>
+                            </b-input-group-append>
+                        </b-input-group>
                     </b-form-group>
                 </b-col>
             </b-row>
+
+            <!-- Main table element -->
             <b-table
                 class="table table-bordered table-hover"
                 :items="items"
@@ -143,14 +112,12 @@
                 small
                 @filtered="onFiltered"
             >
-                <template #cell(estado)="row">
-                    <div class="d-flex justify-content-center">
-                        <box-icon name='radio-circle-marked' :color="row.item.estado == 1 ? '#32ff00' : '#ff0023'" ></box-icon>
-                    </div>
-                </template>
                 <template #cell(actions)="row">
                     <div class="d-flex justify-content-center">
-                        <btnUpdatePrenda @updatePage="updatePage" :data="{row}" />
+                        <btnUpdateMotivo @updatePage="updatePage" :data="row" />
+                        <vs-button circle icon floating danger  @click="deleted(row.item.id)">
+                            <box-icon name='trash' color="#fff"></box-icon>
+                        </vs-button>
                     </div>
                 </template>
 
@@ -172,41 +139,35 @@
             ></b-pagination>
         </b-container>
         <br>
-        
         <div v-if="activarReboot">
             <loginComponent :login="activarReboot"></loginComponent>
         </div>
-         
+
     </div>
 </template>
 
 <script>
-import vSelect from "vue-select";
-import "vue-select/dist/vue-select.css";
 import HeaderComponent from '@/components/Header.vue';
-import btnUpdatePrenda from '@/components/btn_Update_Prendas.vue'
+import btnUpdateMotivo from '@/components/btn_Update_Motivo.vue'
 import { fetchApi, refreshSession } from "@/service/service.js"
 import loginComponent from '@/components/cardLogin.vue';
 
 export default {
-    name:"PrendasView",
+    name:"ClientesView",
     data: () => ({
+
+        itemPrueba: [],
         items: [],
         fields: [
-            { key: 'estado', label: 'Estado', sortable: true, class: 'text-center' },
-            { key: 'cliente', label: 'Cliente', sortable: true, sortDirection: 'desc' },
-            { key: 'nombre', label: 'Prendas', sortable: true, sortDirection: 'desc' },
-            { key: 'clave', label: 'Codigo', sortable: true, sortDirection: 'desc' },
-            { key: 'descripcion', label: 'Descripción', sortable: true, sortDirection: 'desc' },
-            { key: 'cantidadKilos', label: 'Unidades Por Kilo', sortable: true, sortDirection: 'desc' },
-            { key: 'cantidadBolsa', label: 'Cantidad pieza/par', sortable: true, sortDirection: 'desc' },
+            { key: 'motivo', label: 'Motivo', sortable: true, class: 'text-center' },
+            { key: 'descripcion', label: 'descripcion', sortable: true, sortDirection: 'desc' },
             { key: 'actions', label: 'Acciones' }
         ],
         
         totalRows: 1,
         currentPage: 1,
         perPage: 5,
-        pageOptions: [5, 10, 15, { value: 100, text: "mostrar Todo" }],
+        pageOptions: [5, 10, 15, { value: 100, text: "mostrarr Todo" }],
         sortBy: '',
         sortDesc: false,
         sortDirection: 'asc',
@@ -218,31 +179,21 @@ export default {
           content: ''
         },
 
-        prendas: [],
-        tiposProceso: [],
-        clientes: [],
-        sinData: false,
         activeModal: false,
-        nombre: '',
         descripcion: '',
-        kilos: '',
-        cantidadBolsa: '',
-        tipoProceso: '',
-        cliente: '',
+        motivo: '',
         btnGuardar: 0,
         buscarAct: false,
         buscarTxt: '',
         btnBuscar: 0,
         hidden: true,
-
+        notData: true,
         url: process.env.VUE_APP_SERVICE_URL_API, activarReboot: false,
-
     }),
     components: {
         HeaderComponent,
-        btnUpdatePrenda,
-        loginComponent,
-        vSelect
+        btnUpdateMotivo,
+        loginComponent
     },
     created(){
         refreshSession(this.url ,this.$session.get('token')).then( data => {
@@ -250,78 +201,61 @@ export default {
             this.$session.set('token', data.datos.token)
         })
     },
-    mounted(){    
-        this.mostraActivos()
-        this.mostraProceso()
-        this.mostraClientes()
+    mounted(){
+        this.mostrar()
     },
     methods: {
+        
         refresh(){
             refreshSession(this.url ,this.$session.get('token')).then( data => {
                 this.$session.start()
                 this.$session.set('token', data.datos.token)
             }) 
         },
+        async deleted(id){
+            let res = await fetch(this.url+`motivo/elimina/${id}`,{
+                method: "DELETE",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': "*",
+                    'Authorization': this.$session.get('token')
+                },
+            })
+            if(res.ok){
+                this.refresh()
+                this.activeModal = false
+                this.openNotification(`Exito: `, `Se ha Eliminado Correctamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
+                this.refresh()
+                this.mostrar()
+
+            }else{
+                this.openNotification(`Error: inesperado al registrar`, `verifica tus campos, Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
+            }
+        },
         onFiltered(filteredItems) {
             // Trigger pagination to update the number of buttons/pages due to filtering
             this.totalRows = filteredItems.length
             this.currentPage = 1
         },
-        async mostraProceso(){
-            fetchApi(this.url+'proceso/findAll', 'GET', this.$session.get('token'))
-            .then(data => {
-                if(data.status == 401){ this.activarReboot = true }
-                if(data.status == 200){
-                    this.tiposProceso = data.datos
-                }else{
-                    this.tiposProceso = [{"id": 0, "nombre": 'Sin Procesos'}]
-
-                }
-            })
-        },
-        async mostraClientes(){
-            fetchApi(this.url+'cliente/findByEstado/1', 'GET', this.$session.get('token'))
-            .then(data => {
-                if(data.status == 401){ this.activarReboot = true }
-                if(data.status == 200){
-                    this.clientes = data.datos
-                }else{
-                    this.clientes = [{"id": 0, "nombre": 'Sin Clientes'}]
-
-                }
-            })
-        },
-        async mostraActivos(){
+        async mostrar(){
             this.items = []
-            fetchApi(this.url+'prenda/findByEstado/1', 'GET', this.$session.get('token'))
+            fetchApi(this.url+'motivo/findAll', 'GET', this.$session.get('token'))
             .then(data => {
-                this.prendas = []
-                if(data.status == 401){ this.activarReboot = true }
-                if(data.status == 200){
-                    data.datos.forEach( val => {
-                        this.items.push(val)
-                    })
-
-                    console.log(this.items)
-                    this.totalRows = this.items.length
-                }else{
-                    this.sinData = true
-                }
+                data.forEach( val => {
+                    this.items.push({ descripcion: val.descripcion, motivo: val.motivo, id: val.id})
+                })
+                this.totalRows = this.items.length 
             })
         },
-        
-        async addPrenda(){
+        async add(){
             let token = this.$session.get('token')
 
             let json = {
-                "nombre": this.nombre,
+                "id": 0,
+                "motivo": this.motivo,
                 "descripcion": this.descripcion,
-                "idProceso": this.tipoProceso,
-                "idCliente": this.cliente,
-                "cantidadBolsa": this.cantidadBolsa,
-                "kilos": this.kilos,
             };
-            let res = await fetch(this.url+"prenda/register",{
+            let res = await fetch(this.url+"motivo/registra",{
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',
@@ -330,27 +264,22 @@ export default {
                 },
                 body: JSON.stringify(json)
             })
-            let data = await res.json()
-
-            if(data.status == 401){ this.activarReboot = true }
-            if(data.status == 200){
+            if(res.ok){
                 this.refresh()
-                //se actualiza token
-                this.tipoProceso = ''
-                this.cliente = ''
-                this.cantidadBolsa = ''
-                this.nombre = ''
                 this.activeModal = false
-                this.openNotification(`Exito: ${data.mensaje}`, `Se ha Registrado Correctamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
-                this.mostraActivos()
+                this.openNotification(`Exito: `, `Se ha Registrado Correctamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
+                this.mostrar()
+                this.motivo = ''
+                this.descripcion = ''
+
             }else{
-                console.warn(data)
-                this.openNotification(`Error: Inesperado`, `Si el problema persiste comuniquese con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
+                this.openNotification(`Error: inesperado al registrar`, `verifica tus campos, Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
             }
         },
+       
         async updatePage(status){
             if(status == 200){
-                this.mostraActivos()
+                this.mostrar()
             }
         },
         openNotification( title, text, color, position = null, icon) {
@@ -374,9 +303,6 @@ body {
 }
 input {
     width: 100%;
-}
-.vs-select .vs-select--state-null{
-    max-width: 100% !important;
 }
 .ml-5 .vs-card{
     margin-left: auto!important
@@ -430,20 +356,7 @@ input {
 </style>
 
 <style>
-.v-select.vs--single.vs--searchable {
-    margin-top:-4px;
-}
-input[type="search"] {
-    padding: 10px;
-    border: 1px solid #f6f6f6;
-    border-radius: 4px;
-    outline: none;
-}
 
-input[type="search"]:focus {
-    border-color: #f6f6f6;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); 
-}
 .centerAll{
     display: grid;
     place-items: center;
@@ -455,6 +368,5 @@ input[type="search"]:focus {
 .vs-input{
     width: 100%;
 }
-
 
 </style>

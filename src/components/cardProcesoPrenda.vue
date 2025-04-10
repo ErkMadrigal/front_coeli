@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div >
         <b-card  v-if="render">
             <b-skeleton animation="throb" width="85%"></b-skeleton>
             <b-skeleton animation="throb" width="55%"></b-skeleton>
@@ -7,8 +7,63 @@
             <b-skeleton type="input" class="mt-2"></b-skeleton>
             <b-skeleton type="input" class="mt-2"></b-skeleton>
             <b-skeleton type="input" class="mt-2" v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"></b-skeleton>
-        </b-card>        
-        <b-card :style="{ 'border-left': `solid 5px #0d6efd !important` }" v-else :title="data.nomCliente" :sub-title="data.nombrePrenda">
+        </b-card>
+
+        <b-card 
+             :style="{ 'border-left': `solid 5px #0d6efd !important` }"
+            v-else 
+            :title="data.nomCliente" 
+            :sub-title="data.nombrePrenda"
+        >
+            <div class="fixed">
+                <!-- Botón del dropdown -->
+                <b-dropdown 
+                    v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" 
+
+                    class="top"
+                    variant="outline-light" 
+                    toggle-class="text-decoration-none" 
+                    no-caret
+                    right  
+                    >
+                    <template #button-content>
+                        <box-icon name='dots-vertical-rounded'></box-icon>
+                    </template>
+
+                 
+                    <vs-tooltip>
+                        <b-dropdown-item @click="openOrdenLavado=!openOrdenLavado">
+                            Cancelar orden de lavado
+                        </b-dropdown-item>
+                        <template #tooltip>
+                            Cancela el embarque completo
+                        </template>
+                    </vs-tooltip>
+
+                    <vs-tooltip>
+                        <b-dropdown-item @click="openOrdenPrenda=!openOrdenPrenda">
+                            Cancelar orden de prenda
+                        </b-dropdown-item>
+                        <template #tooltip>
+                                Cancela unicamente la orden sobre esta prenda
+                        </template>
+                    </vs-tooltip>
+
+
+                    <vs-tooltip>
+                        <b-dropdown-item 
+                            @click="openregresaPaso=!openregresaPaso"
+                        >
+                            Regresar paso 
+                        </b-dropdown-item>
+                        <template #tooltip>
+                                Regresa especificamente al paso anterior
+                        </template>
+
+                    </vs-tooltip>
+                </b-dropdown>
+
+            </div>
             <div class='badge bg-primary text-wrap float-end mb-2'>
                 Paso {{ data.npaso }}
             </div>
@@ -20,7 +75,10 @@
             <br v-else>
             Numero Orden {{ data.idOrdenLavado }}
             <br>
-            <p class="mt-3" v-if="this.data.folio != null">Folio: {{ this.data.folio }}</p>
+            <p class="mt-3" v-if="this.data.folio != null">
+                Folio: {{ this.data.folio }}
+            </p>
+            <br>
             <strong v-if="this.data.fhAlta">Fecha Registro {{ obtenerFechaBonita(this.data.fhAlta) }}</strong> <br>
             <strong v-if="this.data.fechaEntrega">Fecha Entrega {{ obtenerFechaBonita(this.data.fechaEntrega) }}</strong>
             <br>
@@ -29,100 +87,113 @@
             <div class="badge bg-primary text-wrap float-end" >
                 {{ data.nombrePaso }}
             </div>
-           
-            <strong class="fw-light">Cantidad: {{ data.cantidadPrendas }}</strong>
-            <vs-button block flat primary @click="modalIniciar =! modalIniciar" > Iniciar </vs-button>
-            <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
 
-            <vs-dialog blur  v-model="modalIniciar">
-                <template #header>
-                    <h4 class="not-margin">
-                        Iniciar <b>Proceso</b>
-                    </h4>
-                </template>
-
-                <div class="con-form">
-                    <strong class="fw-light">Cantidad total de prendas: {{ data.cantidadPrendas }}</strong>
-                    
-
-                    <vs-input
-                        class="mt-2"
-                        v-model="cantidad"
-                        label-placeholder="cantidad a ingresar"
-                    />
-                    <div class="con-selects" v-if="data.idTipoLavado">
-                        <vs-select style="max-width:100%!important;" class="mt-3" success label-placeholder="Lavadora" color="success"  v-model="tipoLavadora">
-                            <vs-option  v-for="(lavadora, i) in data.infoLavadoras" :key="i" :label="lavadora.lavadora" :value="lavadora.id">
-                                {{lavadora.lavadora}}  Max.: {{ lavadora.cantidadMaxima }}  Min.: {{ lavadora.cantidadMinima }}
-                            </vs-option>
-                        </vs-select>
-                    </div>
-                    
-                </div>
-                <template #footer>
-                    <div class="footer-dialog">
-                        <vs-button block @click="iniciar()" :disabled="iniciarProceso">
-                            <box-icon v-if="iniciarProceso" name='loader' flip='vertical' animation='spin' color='#ffffff' ></box-icon>
-                            Iniciar 
-                        </vs-button>
-                    </div>
-                </template>
-            </vs-dialog>
-            <vs-button block flat success @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button>
-            <b-modal size="lg" centered v-model="modalShowDetail">
-                <template #modal-header="{ close }">
-                    <h5>Detalles </h5>
-                    <vs-button circle icon floating danger @click="close()">
-                        <box-icon name='x' color="#fff"></box-icon>
-                    </vs-button>
-                </template>
-                <template >
-                    <div v-if="detail.length != 0">
-                        <b-card>
-                            <div class="d-flex flex-row bd-highlight mb-3">
-                                <div class="p-2 bd-highlight">
-                                    <h4 class="mt-2">{{ detail.cliente }}</h4>
-                                    <strong>{{ detail.nombre }}</strong>
-                                </div>
-                            </div>
-                            cantidad por bolsa: <b>{{ detail.cantidadBolsa }}</b> <br>
-                            cantidad prendas: <b>{{ data.cantidadPrendas }}  <box-icon name='edit' color="#0d6efd" v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))" @click="editCantidades"></box-icon></b>
-                           
-                            <br>
-                            tipo de lavado:<b> {{detail.proceso.nombre}} ({{ detail.proceso.codigo}})</b> 
-                            <br>
-                            <hr>
-                            <v-timeline dense clipped >
-                                <v-timeline-item>
-                                    <template v-slot:icon>
-                                        <span><box-icon name='shower'></box-icon></span>
-                                    </template>
-                                    <h3>Pasos:</h3>
-                                </v-timeline-item>
-                                <br>
-                                <v-timeline-item dot-color="teal-lighten-3" class="mb-4" size="small"  v-for="(paso, i) in detail.proceso.pasos" :key="i">
-                                    <template v-slot:icon>
-                                        <small class="pt-1 headline font-weight-bold">{{prefijos(paso.nombre)}}</small>
-                                    </template>
-                                    <b-card :style="data.npaso == paso.orden ? { 'border-left': 'solid 5px #0d6efd !important' } : {}" 
-                                            :title="paso.nombre" 
-                                            :sub-title="paso.descripcion"
-                                            @click="selectPaso"
-                                            >
-                                    </b-card>
-                                </v-timeline-item>
-                            </v-timeline>
-                        </b-card>
-                    </div>
-                </template>
+            <strong class="fw-light">
+                Cantidad: {{ data.cantidadPrendas }}
+            </strong>
+        
+            <div class="mt-auto">
+                <vs-button block flat primary @click="modalIniciar=!modalIniciar" > Iniciar </vs-button> 
+                <vs-dialog blur  v-model="modalIniciar">
+                    <template #header>
+                        <h4 class="not-margin">
+                            Iniciar <b>Proceso</b>
+                        </h4>
+                    </template>
     
-                <template #modal-footer="{ ok }">
-                    <vs-button danger @click="ok()">
-                            Salir
-                    </vs-button>
-                </template>
-                
-            </b-modal>
+                    <div class="con-form">
+                        <strong class="fw-light">Cantidad total de prendas: {{ data.cantidadPrendas }}</strong>
+                        
+    
+                        <vs-input
+                            class="mt-2"
+                            v-model="cantidad"
+                            label-placeholder="cantidad a ingresar"
+                        />
+                        
+                        <div class="center  con-selects" v-if="this.data.idTipoLavado != null" >
+                            
+                            <vs-select style="max-width:100%!important;" class="mt-3" success label-placeholder="Lavadora" color="success"  v-model="tipoLavadora">
+                                <vs-option-group>
+                                    <div slot="title">
+                                        Selecciona una opcion
+                                    </div>
+                                    <vs-option  v-for="(lavado, i) in getLavado" :key="i" :label="lavado.lavadora + ' - Max: ' + lavado.max + ' Min: ' + lavado.min" :value="lavado.idLavadora">
+                                        {{ lavado.lavadora }}  Max.: {{ lavado.max }}  Min.: {{ lavado.min }}
+                                    </vs-option>
+                                </vs-option-group>
+                            </vs-select>
+
+                        </div>
+                        
+                    </div>
+                    <template #footer>
+                        <div class="footer-dialog">
+                            <vs-button block @click="iniciar()" :disabled="iniciarProceso">
+                                <box-icon v-if="iniciarProceso" name='loader' flip='vertical' animation='spin' color='#ffffff' ></box-icon>
+                                Iniciar 
+                            </vs-button>
+                        </div>
+                    </template>
+                </vs-dialog>
+
+                <vs-button block flat success @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button>
+                <b-modal size="lg" centered v-model="modalShowDetail">
+                    <template #modal-header="{ close }">
+                        <h5>Detalles </h5>
+                        <vs-button circle icon floating danger @click="close()">
+                            <box-icon name='x' color="#fff"></box-icon>
+                        </vs-button>
+                    </template>
+                    <template >
+                        <div v-if="detail.length != 0">
+                            <b-card>
+                                <div class="d-flex flex-row bd-highlight mb-3">
+                                    <div class="p-2 bd-highlight">
+                                        <h4 class="mt-2">{{ detail.cliente }}</h4>
+                                        <strong>{{ detail.nombre }}</strong>
+                                    </div>
+                                </div>
+                                cantidad por bolsa: <b>{{ detail.cantidadBolsa }}</b> <br>
+                                cantidad prendas: <b>{{ data.cantidadPrendas }}  <box-icon name='edit' color="#0d6efd" v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))" @click="editCantidades"></box-icon></b>
+                               
+                                <br>
+                                tipo de lavado:<b> {{detail.proceso.nombre}} ({{ detail.proceso.codigo}})</b> 
+                                <br>
+                                <hr>
+                                <v-timeline dense clipped >
+                                    <v-timeline-item>
+                                        <template v-slot:icon>
+                                            <span><box-icon name='shower'></box-icon></span>
+                                        </template>
+                                        <h3>Pasos:</h3>
+                                    </v-timeline-item>
+                                    <br>
+                                    <v-timeline-item dot-color="teal-lighten-3" class="mb-4" size="small"  v-for="(paso, i) in detail.proceso.pasos" :key="i">
+                                        <template v-slot:icon>
+                                            <small class="pt-1 headline font-weight-bold">{{prefijos(paso.nombre)}}</small>
+                                        </template>
+                                        <b-card :style="data.npaso == paso.orden ? { 'border-left': 'solid 5px #0d6efd !important' } : {}" 
+                                                :title="paso.nombre" 
+                                                :sub-title="paso.descripcion"
+                                                @click="selectPaso"
+                                                >
+                                        </b-card>
+                                    </v-timeline-item>
+                                </v-timeline>
+                            </b-card>
+                        </div>
+                    </template>
+        
+                    <template #modal-footer="{ ok }">
+                        <vs-button danger @click="ok()">
+                                Salir
+                        </vs-button>
+                    </template>
+                    
+                </b-modal>
+            </div>
+
             <vs-dialog blur v-model="cancelPredas">
                 <template #header>
                     <h4 class="not-margin">
@@ -176,6 +247,31 @@
                 </template>
                 <ConfirmComponent @confirm="regresando"/>
             </vs-dialog>
+            
+            <vs-dialog v-model="openOrdenLavado">
+                <template #header>
+                    <h4 class="not-margin">
+                        Estas seguro que Deseas cancelar <b>el embarque Completo?</b>
+                    </h4>
+                </template>
+                <ConfirmComponent @confirm="cancelOrdenLavado"/>
+            </vs-dialog>
+            <vs-dialog v-model="openOrdenPrenda">
+                <template #header>
+                    <h4 class="not-margin">
+                        Estas seguro que Deseas cancelar <b>la orden sobre esta prenda?</b>
+                    </h4>
+                </template>
+                <ConfirmComponent @confirm="cancelOrdenPrenda"/>
+            </vs-dialog>
+            <vs-dialog v-model="openregresaPaso">
+                <template #header>
+                    <h4 class="not-margin">
+                        Estas seguro que Deseas <b>Regresarlo?</b>
+                    </h4>
+                </template>
+                <ConfirmComponent @confirm="regresarPaso"/>
+            </vs-dialog>
             <vs-dialog blur v-model="editCount">
                 <template #header>
                     <h4 class="not-margin">
@@ -223,10 +319,16 @@
             </vs-dialog>
             
         </b-card>
+        
         <div v-if="activarReboot">
             <loginComponent :login="activarReboot"></loginComponent>
         </div>
-
+        <!-- <div 
+            @dragover.prevent 
+            @dragenter.prevent 
+            @drop="dropHandler">
+            <h1> zona</h1>
+        </div> -->
     </div>
 </template>
 
@@ -241,6 +343,12 @@ export default {
         data: Object,
     },
     data: () => ({
+        getLavado: [],
+        openOrdenLavado: false,
+        openOrdenPrenda: false,
+        openregresaPaso: false,
+        modalIniciarDropDown: false,
+        modalShowDetailDropDown: false,
         date: '',
         cantidad: '',
         motivoElim: '',
@@ -265,6 +373,7 @@ export default {
         textAlertConfirm: '',
         pathname: window.location.pathname,
         url: process.env.VUE_APP_SERVICE_URL_API, activarReboot: false,
+       
     }),
     computed: {
         
@@ -272,8 +381,8 @@ export default {
     components: {
         loginComponent,
         ConfirmComponent,
-
     },
+    
     watch: {
         data: {
             immediate: true, // Coma añadida aquí
@@ -282,7 +391,8 @@ export default {
                     this.mostrarDetailPrendas(newVal.idPrenda);
                 }
             }
-        }
+        },
+        
     },
     mounted(){
         let fecha=new Date(this.data.fechaInicio);
@@ -291,7 +401,10 @@ export default {
         setTimeout(() => {
             this.render = false
             this.mostrarDetailPrendas(this.data.idPrenda)
-        }, 100)  
+        }, 100) 
+            if(this.data.idTipoLavado != null){
+                this.mostrarLavadoras(this.data.idTipoLavado)
+            }
 
     },
     methods: {
@@ -305,6 +418,10 @@ export default {
             this.textAlertConfirm = 
             this.editCount = true;
             this.modalShowDetail= false;
+        },
+        onNoResults(searchText) {
+            // Lógica para manejar el caso en que no se encuentran resultados
+            console.log(`No se encontraron resultados para: ${searchText}`);
         },
         async modificarCount(){
             if(status == 200){
@@ -327,6 +444,24 @@ export default {
             this.cancelPredas = false
             this.cancelPredas = true
         },
+        async mostrarLavadoras(id){
+            // let item = []
+            fetchApi(this.url+`lavadora/findByTipoLavado/${id}`, 'GET', this.$session.get('token'))
+            .then(data => {
+                if(data.status == 200){
+                    // data.datos.forEach(lavado => {
+                    //     if(lavado.estado !== "OCUPADO"){
+                    //         item.push({id: lavado.idLavadora, lavadora: lavado.lavadora, max: lavado.max, min: lavado.min })
+                    //     }
+                    // });
+                    this.getLavado = data.datos 
+                } 
+            })
+
+        },
+        prendaSeleccionada(){
+            console.log("data")
+        },
         async cancelPrednas(status){
             if(status == 200){
                 let token = this.$session.get('token')
@@ -341,7 +476,7 @@ export default {
                         "mensaje": this.motivoElim,
                         "cantidadCancela": this.cantidadElim,
                         "idOrdenPrenda": this.data.idOrdenPrenda,
-                        "idHist": this.data.idHist
+                        "idHist": this.data.idHist ? this.data.idHist : 0
 
                     };
                     
@@ -367,6 +502,95 @@ export default {
                     }else{
                         this.openNotification(`Error: inesperado al intentar cancelar`, `Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
                     }
+                }
+            }
+        },
+        async cancelOrdenLavado(status){
+            if(status == 200){
+                let token = this.$session.get('token')
+    
+                let res = await fetch(`${this.url}orden/delete/${this.data.idOrdenLavado}`,{
+                    method: "DELETE",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': "*",
+                        'Authorization': token
+                    },
+                })
+                let data = await res.json()
+    
+                if(data.status == 401){ this.activarReboot = true }
+                if(data.status == 200){
+                    this.refresh()
+                    this.comfirm = false
+                    this.openOrdenLavado = false
+                    this.openNotification(`Exito: ${data.mensaje}`, `Se han Eliminado Exitosamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
+                    this.$emit('updatePage', '200')
+                }else{
+                    this.openNotification(`Error: inesperado al intentar cancelar`, `Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
+                }
+            }
+        },
+        async cancelOrdenPrenda(status){
+            if(status == 200){
+
+                let token = this.$session.get('token')
+    
+                let res = await fetch(`${this.url}orden/delete/ordenprenda/${this.data.idOrdenPrenda}`,{
+                    method: "DELETE",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': "*",
+                        'Authorization': token
+                    },
+                })
+                let data = await res.json()
+    
+                if(data.status == 401){ this.activarReboot = true }
+                if(data.status == 200){
+                    this.refresh()
+                    this.comfirm = false
+                    this.openOrdenPrendas = false
+                    this.openNotification(`Exito: ${data.mensaje}`, `Se han Eliminado Exitosamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
+                    this.$emit('updatePage', '200')
+                }else{
+                    this.openNotification(`Error: inesperado al intentar cancelar`, `Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
+                }
+            }
+        },
+        async regresarPaso(status){
+            if(status == 200){
+                let token = this.$session.get('token')
+    
+                let json = {
+                    "mensaje": this.motivoElim,
+                    "cantidadCancela": 0,
+                    "idOrdenPrenda": 0,
+                    "idHist": this.data.idHist ? this.data.idHist : 0
+    
+                };
+    
+                let res = await fetch(`${this.url}orden/paso/return`,{
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': "*",
+                        'Authorization': token
+                    },
+                    body: JSON.stringify(json)
+    
+                })
+                let data = await res.json()
+    
+                if(data.status == 401){ this.activarReboot = true }
+                if(data.status == 200){
+                    this.refresh()
+                    this.comfirm = false
+                    this.openregresaPaso = false
+                    this.openNotification(`Exito: ${data.mensaje}`, `Se han Eliminado Exitosamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
+                    this.$emit('updatePage', '200')
+                }else{
+                    this.openNotification(`Error: inesperado al intentar cancelar`, `Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)
                 }
             }
         },
@@ -432,10 +656,12 @@ export default {
                 let token = this.$session.get('token')
 
                 let json = {
-                    "idOrdenPrenda": this.data.idOrdenPrenda,
-                    "cantidad": this.cantidad,
-                    "idPasoProceso": this.data.idPaso,
-                    "idLavadora": this.tipoLavadora
+                    "idLavadora": this.tipoLavadora,
+                    "prendas": [{
+                        "idOrdenPrenda": this.data.idOrdenPrenda,
+                        "cantidad": this.cantidad,
+                        "idPasoProceso": this.data.idPaso,
+                    }],
                 };
                 let res = await fetch(this.url+"orden/proceso",{
                     method: "POST",
@@ -454,6 +680,8 @@ export default {
 
                     this.refresh()
                     this.modalIniciar = false
+                    this.tipoLavadora = ''
+                    this.cantidad = ''
                     this.openNotification(`Exito: ${data.mensaje}`, `Se ha iniciado el proceso correctamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
                     this.mostrarDetailPrendas(this.data.idPrenda)
                     this.$emit('updatePage', '200')
@@ -496,7 +724,7 @@ export default {
     }
 }
 </script>
-<style>
+<style scoped>
 body {
     font-family: "Poppins", sans-serif;
     height: 100vh;
@@ -510,10 +738,51 @@ input {
     max-width: 100% !important;
 }
 
-
 .card {
     min-height: 4rem !important;
 }
+
+.dropdown-menu {
+  border-radius: 8px !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+ul .dropdown-menu .show{
+    position: absolute;
+    transform: translate3d(-5px, 44px, 0px);
+    top: 0px;
+    right: 0px !important;
+    will-change: transform;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.mt{
+    margin-top: -4.5rem;
+}
+
+.fixed{
+    display: flex;
+}
+.top{
+    position: absolute;
+    top: 10px;
+    right: 0;
+}
+.form-select{
+    width: 95%;
+    border-radius: 1rem;
+    height: 1rem;
+}
+
+
 
 </style>
 <style lang="stylus">

@@ -147,6 +147,13 @@ const routes = [
     component: () => import('../views/CanceladasView.vue'),
     meta: {requireAuth: true, roles: [ROLES.SISTEMAS, ROLES.ADMIN, ROLES.CANCELACION]}
   },
+
+  {
+    path: '/motivoCancelacion',
+    name: 'motivoCancelacion',
+    component: () => import('../views/motivoView.vue'),
+    meta: {requireAuth: true, roles: [ROLES.SISTEMAS, ROLES.ADMIN, ROLES.CANCELACION]}
+  },
   
   {
     path: '/roles',

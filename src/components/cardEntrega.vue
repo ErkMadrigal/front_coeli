@@ -178,7 +178,7 @@ export default {
     },
     mounted(){
 
-        console.log("arreglo", this.data)
+        // console.log("arreglo", this.data)
         setTimeout(() => {
             this.render = false
             this.mostraCli()

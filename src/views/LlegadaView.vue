@@ -413,7 +413,7 @@ export default {
             let json = {
                 "idCliente": this.SelectCliente,
                 "fechaEntrega": this.fechaEntrega,
-                "FechaEntrada": fechaOptional,
+                "fechaRecepcion": fechaOptional,
                 "ordenPrendas": this.prendas,
                 "numEnvio": this.folio
 
@@ -503,10 +503,10 @@ input {
     height: 1rem;
 }
 .v-select.vs--single.vs--searchable {
-    margin-top:-4px;
+    margin-top:-6px;
 }
-.vs--searchable .vs__dropdown-toggle{
-    border-radius: 0.7rem;
+.v-select.vs--single.vs--searchable .vs__dropdown-toggle{
+    border-radius: 0.7rem !important;
 }
 input[type="search"] {
     padding: 10px;

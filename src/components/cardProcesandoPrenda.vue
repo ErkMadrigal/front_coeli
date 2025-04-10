@@ -8,48 +8,73 @@
             <b-skeleton type="input" v-if="data.idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"></b-skeleton>
             <b-skeleton type="input" v-if="data.idEstado != 10 "></b-skeleton>
             <b-skeleton type="input" v-if="$session.get('roles') == 'SISTEMAS' || $session.get('roles') == 'ADMIN' "></b-skeleton>
-        </b-card>        
-        <b-card :style="{ 'border-left': `solid 5px #d9534f !important` }" v-else :title="data.nomCliente" :sub-title="data.nombrePrenda">
+        </b-card> 
+        <b-card v-if="data.detalleMaquinada.length > 1" :style="{ 'border-left': `solid 5px #d9534f !important` }" :title="data.lavadora ? '': data.lavadora" :sub-title="'carga utilizada '+limitDecimal(data.kilosMaquinada)+' kg'">
+           
+            <!-- From Uiverse.io by naveenkumarr-onyx --> 
+            <div class="card1"  v-for="(prenda, i) in data.detalleMaquinada" :key="i">
+                <b-card :title="prenda.nombreCliente + i" :sub-title="prenda.nombrePrenda" :class="'item item--1 '+ (i > 0 ? 'mt-card':'') ">
+                    <div class='badge bg-primary text-wrap float-end mb-2' >
+                        Paso {{ prenda.pasoProceso.orden }}
+                    </div>
+                    <p class="mt-3" >Folio: {{ prenda.folio }}</p>
+                    <strong class="text text--1" v-if="prenda.fhAlta">Fecha Registro {{ obtenerFechaBonita(prenda.fhAlta) }}</strong><br>
+                    <strong class="text text--1" v-if="prenda.fechaEntrega">Fecha Entrega {{ obtenerFechaBonita(prenda.fechaEntrega) }}</strong>
+                </b-card>
+            </div>
+
+            <vs-button v-if="data.detalleMaquinada[0].idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.requiereAuth)"> Autorizar </vs-button>
+            <vs-button v-if="data.detalleMaquinada[0].idEstado != 10" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
+            <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
+            
+            <!-- end -->
+            <!-- <vs-button class="d-none" block flat primary @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button>
+            <vs-button v-if="data.detalleMaquinada[0].idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.detalleMaquinada[0].idHist)"> Autorizar </vs-button>
+            <vs-button v-if="data.detalleMaquinada[0].idEstado != 10" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
+            <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
+            -->
+        </b-card>    
+        <b-card v-if="data.detalleMaquinada.length == 1" :style="{ 'border-left': `solid 5px #007bff !important` }" :title="data.detalleMaquinada[0].nombreCliente" :sub-title="data.detalleMaquinada[0].nombrePrenda">
             <strong>
-                Cantidad de Prendas {{ data.cantidadPrendas }}
+                Cantidad de Prendas {{ data.detalleMaquinada[0].cantidad }}
             </strong>
             <div class='badge bg-primary text-wrap float-end mb-2' >
-                Paso {{ data.npaso }}
+                Paso {{ data.detalleMaquinada[0].pasoProceso.orden }}
             </div>
-            <vs-button v-if="data.npaso == 1 || $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  circle icon floating primary @click="imprimirTicket(data.idHist)">
+            <vs-button v-if="data.detalleMaquinada[0].npaso == 1 || $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  circle icon floating primary @click="imprimirTicket(data.id)">
                 <box-icon name='printer' color="#fff"></box-icon>
             </vs-button>
-            <p>{{ date }}</p>
-            Numero Orden {{ data.idOrdenLavado }}
+            <p>{{ calcularTiempoTranscurrido(new Date(this.data.detalleMaquinada[0].fechaInicio)) }}</p>
+            Numero Orden {{ data.detalleMaquinada[0].idOrdenLavado }}
             <br>
-            <p class="mt-3" v-if="this.data.folio != null">Folio: {{ this.data.folio }}</p>
-            <strong v-if="this.data.fhAlta">Fecha Registro {{ obtenerFechaBonita(this.data.fhAlta) }}</strong><br>
-            <strong v-if="this.data.fechaEntrega">Fecha Entrega {{ obtenerFechaBonita(this.data.fechaEntrega) }}</strong>
+            <p class="mt-3" v-if="this.data.detalleMaquinada[0].folio != null">Folio: {{ this.data.detalleMaquinada[0].folio }}</p>
+            <strong v-if="this.data.detalleMaquinada[0].fhAlta">Fecha Registro {{ obtenerFechaBonita(this.data.detalleMaquinada[0].fhAlta) }}</strong><br>
+            <strong v-if="this.data.detalleMaquinada[0].fechaEntrega">Fecha Entrega {{ obtenerFechaBonita(this.data.detalleMaquinada[0].fechaEntrega) }}</strong>
             <br>
-            <p v-if="data.infoLavadora != null">
-                Lavadora {{ data.infoLavadora.lavadora }}
-            </p>
-            <br>
+            <!-- <p v-if="data.detalleMaquinada[0].infoLavadora != null">
+                Lavadora {{ data.detalleMaquinada[0].infoLavadora.lavadora }}
+            </p> -->
+            <!-- <br> -->
             <div class='badge bg-primary text-wrap float-end mb-2' >
-                {{ data.nombrePaso }}
+                {{ data.detalleMaquinada[0].pasoProceso.nombre }}
             </div>
-            <div v-if="data.idEstado == 10" class="badge bg-danger text-wrap float-end mb-3" >
+            <div v-if="data.detalleMaquinada[0].idEstado == 10" class="badge bg-danger text-wrap float-end mb-3" >
                 Se Requiere Autorización
             </div>
-            <p class="fw-light" v-if="data.lavadora">Lavadora {{ data.lavadora }}</p>
+            <p class="fw-light" v-if="data.detalleMaquinada[0].lavadora">Lavadora {{ data.detalleMaquinada[0].lavadora }}</p>
             <vs-button class="d-none" block flat primary @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button>
-            <vs-button v-if="data.idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.idHist)"> Autorizar </vs-button>
-            <vs-button v-if="data.idEstado != 10" block flat danger @click="terminar(data.idHist)"> Terminar </vs-button>
+            <vs-button v-if="data.detalleMaquinada[0].idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.requiereAuth)"> Autorizar </vs-button>
+            <vs-button v-if="data.detalleMaquinada[0].idEstado != 10" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
             <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
             <vs-dialog blur v-model="cancelPredas">
                 <template #header>
                     <h4 class="not-margin">
-                        Eliminar <b>{{data.nombrePrenda}}</b>
+                        Eliminar <b>{{data.detalleMaquinada[0].nombrePrenda}}</b>
                     </h4>
                 </template>
                 <div class="con-form">
                     <template>
-                        <p>Cantidad <b>{{ data.cantidadPrendas }}</b></p>
+                        <p>Cantidad <b>{{ data.detalleMaquinada[0].cantidad }}</b></p>
                         <div class="center content-inputs">
                             <vs-input danger type="text" v-model="motivoElim" label-placeholder="Describe el motivo">
                                 <template #icon>
@@ -80,7 +105,7 @@
             </vs-dialog>
             <b-modal size="lg" centered v-model="modalShowDetail">
                 <template #modal-header="{ close }">
-                    <h5>Detalles {{ data.nombrePrenda }}</h5>
+                    <h5>Detalles {{ data.detalleMaquinada[0].nombrePrenda }}</h5>
                     
                     <vs-button circle icon floating danger @click="close()">
                         <box-icon name='x' color="#fff"></box-icon>
@@ -88,11 +113,11 @@
                 </template>
                 <template >
                     
-                    Nombre del programa lavado <b>{{ data.nombreProgramaLavado ? data.nombreProgramaLavado : 'no Aplica' }}</b> <br>
-                    Tipo de lavado <b>{{ data.tipoLavado ? data.tipoLavado : 'no Aplica'}}</b> <br>
-                    Nombre del sigiente paso: <b>{{ data.nombreSigPaso }}</b> <br>
-                    Cantidad minima de la lavadora: <b>{{data.cantidadMinima}}</b> <br>
-                    Cantidad maxima de la lavadora: <b>{{data.cantidadMaxima}}</b>
+                    Nombre del programa lavado <b>{{ data.detalleMaquinada[0].nombreProgramaLavado ? data.detalleMaquinada[0].nombreProgramaLavado : 'no Aplica' }}</b> <br>
+                    Tipo de lavado <b>{{ data.detalleMaquinada[0].tipoLavado ? data.detalleMaquinada[0].tipoLavado : 'no Aplica'}}</b> <br>
+                    Nombre del sigiente paso: <b>{{ data.detalleMaquinada[0].nombreSigPaso }}</b> <br>
+                    Cantidad minima de la lavadora: <b>{{data.detalleMaquinada[0].cantidadMinima}}</b> <br>
+                    Cantidad maxima de la lavadora: <b>{{data.detalleMaquinada[0].cantidadMaxima}}</b>
                 </template>
     
                 <template #modal-footer="{ ok }">
@@ -186,11 +211,11 @@ export default {
         loginComponent
     },
     mounted(){
-        let fecha=new Date(this.data.fechaInicio);
-        this.date = this.calcularTiempoTranscurrido(fecha);
         setTimeout(() => {
             this.render = false
-        }, 100)   
+        }, 100)  
+        // console.log(this.data)
+
     },
     methods: {
         refresh(){
@@ -318,7 +343,7 @@ export default {
             let token = this.$session.get('token')
             let json = {
                 "mensaje": this.motivoReturn,
-                "idHist": this.data.idHist,
+                "idHist": this.data.detalleMaquinada[0].id,
                 "idOrdenPrenda": "-1",
                 "cantidadCancela": "-1"
             };
@@ -391,8 +416,8 @@ export default {
                     let json = {
                         "mensaje": this.motivoElim,
                         "cantidadCancela": this.cantidadElim,
-                        "idOrdenPrenda": this.data.idOrdenPrenda,
-                        "idHist": this.data.idHist
+                        "idOrdenPrenda": this.data.detalleMaquinada[0].idOrdenPrenda,
+                        "idHist": this.data.detalleMaquinada[0].id
 
                     };
                     
@@ -435,34 +460,13 @@ export default {
             title: title,
             text: text
           })
+        },
+        limitDecimal(num) {
+            return parseFloat(num.toFixed(2));
         }
     }
 }
 </script>
-<style>
-body {
-    font-family: "Poppins", sans-serif;
-    height: 100vh;
-    background: #f1f1f1 !important;
-}
-
-.card{
-    border-radius: 1rem;
-    min-height: 9rem; 
-    min-width: 12rem;
-}
-input {
-    width: 100%;
-}
-.ml-5 .vs-card{
-    margin-left: auto!important
-}
-
-.vs-card{
-    padding: 0.5rem;
-}
-
-</style>
 <style lang="stylus">
 getColor(colorx, alpha = 1)
     unquote("rgba(var(--vs-"+colorx+"), "+alpha+")")
@@ -504,4 +508,88 @@ getVar(var)
     line-height 1rem
     padding-bottom 5px
     padding-left 8px
+</style>
+<style>
+body {
+    font-family: "Poppins", sans-serif;
+    height: 100vh;
+    background: #f1f1f1 !important;
+}
+
+.card{
+    border-radius: 1rem;
+    min-height: 9rem; 
+    min-width: 12rem;
+}
+input {
+    width: 100%;
+}
+.ml-5 .vs-card{
+    margin-left: auto!important
+}
+
+.vs-card{
+    padding: 0.5rem;
+}
+
+
+/* From Uiverse.io by naveenkumarr-onyx */ 
+/* .card {
+  width: 190px;
+  height: 254px;
+  color: white;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 5px;
+  overflow: visible;
+} */
+
+.card .item {
+  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  /* flex-direction: column;
+  align-items: center;
+  justify-content: center; */
+}
+
+.item:hover {
+  transform: scale(1.1);
+  transition: all 1s ease-in-out;
+  /* rotate: 360deg; */
+  z-index:9;
+}
+
+.item svg {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 7px;
+}
+
+.item--1 {
+  background: #e0e0e1;
+}
+
+
+.quantity {
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.text {
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.text--1 {
+  color: rgb(181, 181, 181);
+}
+
+.mt-card{
+    margin-top: -5rem;
+}
+
 </style>

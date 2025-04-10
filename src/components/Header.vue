@@ -223,6 +223,14 @@
                 Reportes
             </router-link>
           </vs-sidebar-item>
+          <vs-sidebar-item :class="{ 'active': isActive('/motivoCancelacion') }" v-if="this.$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" id="motivoCancelacion" >
+            <template #icon>
+              <box-icon name='folder'></box-icon>
+            </template>
+            <router-link to="/motivoCancelacion" class="nav-link">
+                Textos cancelaciones
+            </router-link>
+          </vs-sidebar-item>
 
           <vs-sidebar-item id="cambioNip">
             <template #icon >
