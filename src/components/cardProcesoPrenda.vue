@@ -119,12 +119,27 @@
                                         Selecciona una opcion
                                     </div>
                                     <vs-option  v-for="(lavado, i) in getLavado" :key="i" :label="lavado.lavadora + ' - Max: ' + lavado.max + ' Min: ' + lavado.min" :value="lavado.idLavadora">
-                                        {{ lavado.lavadora }}  Max.: {{ lavado.max }}  Min.: {{ lavado.min }}
+                                        {{ lavado.lavadora }}  Max.: {{ (lavado.max/100)*lavado.kilos }} KG  Min.: {{ (lavado.min/100)*lavado.kilos }} KG
+                                    </vs-option>
+                                </vs-option-group>
+                            </vs-select>
+                            <vs-select 
+                                style="max-width:100%!important;" class="mt-3" success label-placeholder="Motivo" color="success" 
+                                    v-model="idMotivoMaquinada">
+                                <vs-option-group>
+                                    <div slot="title">
+                                        Selecciona una motivo
+                                    </div>
+                                    <vs-option  v-for="(motivo, i) in motivos" :key="i" 
+                                    :label="motivo.motivo" 
+                                    :value="motivo.id">
+                                        {{ motivo.motivo }}
                                     </vs-option>
                                 </vs-option-group>
                             </vs-select>
 
                         </div>
+                        
                         
                     </div>
                     <template #footer>
@@ -343,6 +358,8 @@ export default {
         data: Object,
     },
     data: () => ({
+        motivos: [],
+        idMotivoMaquinada: '',
         getLavado: [],
         openOrdenLavado: false,
         openOrdenPrenda: false,
@@ -397,7 +414,7 @@ export default {
     mounted(){
         let fecha=new Date(this.data.fechaInicio);
         this.date = this.calcularTiempoTranscurrido(fecha);
-        
+        this.mostrarMotivo()
         setTimeout(() => {
             this.render = false
             this.mostrarDetailPrendas(this.data.idPrenda)
@@ -427,6 +444,13 @@ export default {
             if(status == 200){
                 console.log("modificarCantidad...")
             }
+        },
+        async mostrarMotivo(){
+            this.motivos = []
+            fetchApi(this.url+'motivo/findAll', 'GET', this.$session.get('token'))
+            .then(data => {
+                this.motivos = data
+            })
         },
         selectPaso(){
             if(this.$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))){
@@ -685,7 +709,7 @@ export default {
                     this.openNotification(`Exito: ${data.mensaje}`, `Se ha iniciado el proceso correctamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
                     this.mostrarDetailPrendas(this.data.idPrenda)
                     this.$emit('updatePage', '200')
-
+                    this.getLavado = []
                 }else{
                     this.iniciarProceso = false;
                     this.openNotification(`Error: inesperado`, `Si el problema persiste, comunicate con el administrador`, 'danger', 'top-left',`<box-icon name='bug' color="#fff"></box-icon>`)

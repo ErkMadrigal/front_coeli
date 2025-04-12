@@ -86,7 +86,7 @@
                                             </b-card>
                                         </b-col>
                                     </b-row>
-                                        <vs-button class="mt-5" v-if="prendas.length > 1" block flat primary @click="modalIniciar =! modalIniciar"> Iniciar </vs-button> 
+                                        <vs-button class="mt-5" v-if="prendas.length > 1" block flat primary @click="modalIniciar =! modalIniciar"> Iniciar ({{ canTotal }} KG a ingresar)</vs-button> 
                                         <vs-dialog blur  v-model="modalIniciar">
                                             <template #header>
                                                 <h4 class="not-margin">
@@ -101,8 +101,24 @@
                                                             <div slot="title">
                                                                 Selecciona una opcion
                                                             </div>
-                                                            <vs-option  v-for="(lavado, i) in getLavado" :key="i" :label="lavado.lavadora + ' - Max: ' + lavado.max + ' Min: ' + lavado.min" :value="lavado.idLavadora">
-                                                                {{ lavado.lavadora }}  Max.: {{ lavado.max }}  Min.: {{ lavado.min }}
+                                                            <vs-option  v-for="(lavado, i) in getLavado" :key="i" 
+                                                            :label="`${lavado.lavadora} - Max: ${(lavado.max / 100) * lavado.kilos} Min: ${(lavado.min / 100) * lavado.kilos}`" 
+                                                            :value="lavado.idLavadora">
+                                                                {{ lavado.lavadora }}  Max.: {{ (lavado.max/100)*lavado.kilos }} KG  Min.: {{ (lavado.min/100)*lavado.kilos }} KG
+                                                            </vs-option>
+                                                        </vs-option-group>
+                                                    </vs-select>
+                                                    <vs-select 
+                                                        style="max-width:100%!important;" class="mt-3" success label-placeholder="Motivo" color="success" 
+                                                         v-model="idMotivoMaquinada">
+                                                        <vs-option-group>
+                                                            <div slot="title">
+                                                                Selecciona una motivo
+                                                            </div>
+                                                            <vs-option  v-for="(motivo, i) in motivos" :key="i" 
+                                                            :label="motivo.motivo" 
+                                                            :value="motivo.id">
+                                                                {{ motivo.motivo }}
                                                             </vs-option>
                                                         </vs-option-group>
                                                     </vs-select>
@@ -242,6 +258,8 @@ import loginComponent from '@/components/cardLogin.vue';
 
 export default {
     data: () => ({
+        idMotivoMaquinada:'',
+        canTotal: 0,
         animate: false,
         modalIniciar: false,
         iniciarProceso: false, 
@@ -252,6 +270,7 @@ export default {
         filteredConsultas: [],
         filteredConsultasP: [],
         consultas: [],
+        motivos: [],
         sinData: false,
         sinDataProcesando: false,
         consultasProcesando: [],
@@ -259,6 +278,7 @@ export default {
         isExpanded: false,
         cantidadCobinado: false,
         cantidadPrendasConbinar: "",
+        cantidadPorKilo: "",
         droppedItemsCount: 0,
         isDragging: false,
         cantidadOriginal: "",
@@ -289,6 +309,7 @@ export default {
     },
     mounted(){    
         this.mostratConsultas();
+        this.mostrarMotivo()
     },
     methods: {
         refresh(){
@@ -296,6 +317,13 @@ export default {
                 this.$session.start()
                 this.$session.set('token', data.datos.token)
             }) 
+        },
+        prendTotal(){
+           this.canTotal =  this.prendas.reduce((acumulador, valorActual) =>{
+            //    console.log(acumulador, valorActual) 
+               return acumulador +  (parseFloat(valorActual.cantidad)/parseFloat(valorActual.cantidadPorKilo))
+
+           },0)
         },
         async mostrarLavadoras(id){
             fetchApi(this.url+`lavadora/findByTipoLavado/${id}`, 'GET', this.$session.get('token'))
@@ -364,6 +392,7 @@ export default {
             this.nombreCliente = droppedItem.nomCliente
             this.folio = droppedItem.folio
             this.cantidadOriginal = droppedItem.cantidadPrendas
+            this.cantidadPorKilo = droppedItem.cantidadPorKilo
             
             // Incrementar contador
             
@@ -382,12 +411,13 @@ export default {
                     "prenda": this.prenda,
                     "folio": this.folio,
                     "nombreCliente": this.nombreCliente,
-                    "tipoLavado": this.nombreTipoLavado
+                    "tipoLavado": this.nombreTipoLavado,
+                    "cantidadPorKilo": this.cantidadPorKilo
             })
             this.droppedItemsCount = this.prendas.length
             this.cantidadPrendasConbinar = ""
             this.cantidadCobinado = false
-
+            this.prendTotal()
         },
 
         handleValidDrop(item) {
@@ -413,6 +443,14 @@ export default {
                 this.showError = false
             }, 1000)
         },
+
+        async mostrarMotivo(){
+            this.motivos = []
+            fetchApi(this.url+'motivo/findAll', 'GET', this.$session.get('token'))
+            .then(data => {
+                this.motivos = data
+            })
+        },
       
         eliminar(eliminar){
             const nuevoArray = this.prendas.filter(prenda => prenda.id !== eliminar);
@@ -420,11 +458,13 @@ export default {
             this.tipoLavadora = ''
         },
         async iniciar(){
+            
             this.iniciarProceso = true;
 
             let token = this.$session.get('token')
 
             let json = {
+                "idMotivoMaquinada": this.idMotivoMaquinada,
                 "idLavadora": this.tipoLavadora,
                 "prendas": this.prendas,
             };

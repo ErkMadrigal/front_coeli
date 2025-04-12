@@ -9,7 +9,7 @@
             <b-skeleton type="input" v-if="data.idEstado != 10 "></b-skeleton>
             <b-skeleton type="input" v-if="$session.get('roles') == 'SISTEMAS' || $session.get('roles') == 'ADMIN' "></b-skeleton>
         </b-card> 
-        <b-card v-if="data.detalleMaquinada.length > 1" :style="{ 'border-left': `solid 5px #d9534f !important` }" :title="data.lavadora ? '': data.lavadora" :sub-title="'carga utilizada '+limitDecimal(data.kilosMaquinada)+' kg'">
+        <b-card v-if="data.detalleMaquinada.length > 1" :style="{ 'border-left': `solid 5px #d9534f !important` }" :title="'Lavadora ' +data.lavadora" :sub-title="'carga utilizada '+limitDecimal(data.kilosMaquinada)+' kg'">
            
             <!-- From Uiverse.io by naveenkumarr-onyx --> 
             <div class="card1"  v-for="(prenda, i) in data.detalleMaquinada" :key="i">
@@ -22,19 +22,17 @@
                     <strong class="text text--1" v-if="prenda.fechaEntrega">Fecha Entrega {{ obtenerFechaBonita(prenda.fechaEntrega) }}</strong>
                 </b-card>
             </div>
-
-            <vs-button v-if="data.detalleMaquinada[0].idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.requiereAuth)"> Autorizar </vs-button>
-            <vs-button v-if="data.detalleMaquinada[0].idEstado != 10" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
-            <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
-            
             <!-- end -->
-            <!-- <vs-button class="d-none" block flat primary @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button>
-            <vs-button v-if="data.detalleMaquinada[0].idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.detalleMaquinada[0].idHist)"> Autorizar </vs-button>
-            <vs-button v-if="data.detalleMaquinada[0].idEstado != 10" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
+            <!-- <vs-button class="d-none" block flat primary @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button> -->
+            <vs-button v-if=" data.autorizacion == null && data.requiereAuth && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.id)"> Autorizar </vs-button>
+            <vs-button v-if="data.requiereAuth && data.autorizacion != null" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
+            <vs-button v-if="!data.requiereAuth && data.autorizacion == null" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
             <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
-            -->
+            <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat warn @click="modalReiniciar =! modalReiniciar" > Reiniciar </vs-button>
+           
         </b-card>    
-        <b-card v-if="data.detalleMaquinada.length == 1" :style="{ 'border-left': `solid 5px #007bff !important` }" :title="data.detalleMaquinada[0].nombreCliente" :sub-title="data.detalleMaquinada[0].nombrePrenda">
+        <b-card v-if="data.detalleMaquinada.length == 1" :style="{ 'border-left': `solid 5px #007bff !important` }" :title="'Lavadora '+ data.lavadora" :sub-title="'Cliente '+data.detalleMaquinada[0].nombreCliente">
+            <small>Prenda {{ data.detalleMaquinada[0].nombrePrenda }}</small> <br>
             <strong>
                 Cantidad de Prendas {{ data.detalleMaquinada[0].cantidad }}
             </strong>
@@ -63,8 +61,9 @@
             </div>
             <p class="fw-light" v-if="data.detalleMaquinada[0].lavadora">Lavadora {{ data.detalleMaquinada[0].lavadora }}</p>
             <vs-button class="d-none" block flat primary @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button>
-            <vs-button v-if="data.detalleMaquinada[0].idEstado == 10 && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.requiereAuth)"> Autorizar </vs-button>
-            <vs-button v-if="data.detalleMaquinada[0].idEstado != 10" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
+            <vs-button v-if=" data.autorizacion == null && data.requiereAuth && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.id)"> Autorizar </vs-button>
+            <vs-button v-if="data.requiereAuth && data.autorizacion != null" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
+            <vs-button v-if="!data.requiereAuth && data.autorizacion == null" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
             <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
             <vs-dialog blur v-model="cancelPredas">
                 <template #header>
@@ -131,28 +130,21 @@
                 
             </b-modal>
             <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat warn @click="modalReiniciar =! modalReiniciar" > Reiniciar </vs-button>
-            <vs-dialog blur  v-model="modalReiniciar">
-                <template #header>
-                    <h4 class="not-margin">
-                        Seguro que deseas Reiniciar el <b>Proceso</b>
-                    </h4>
-                </template>
-                <div class="con-form">
-                    <vs-input
-                        class="mt-1"
-                        v-model="motivoReturn"
-                        label-placeholder="motivo de reinicio"
-                    />
-                </div>
-                <template #footer>
-                    <div class="footer-dialog">
-                        <vs-button block @click="reiniciar()">
-                            Reiniciar
-                        </vs-button>
-                    </div>
-                </template>
-            </vs-dialog>
         </b-card>
+        <vs-dialog blur  v-model="modalReiniciar">
+            <template #header>
+                <h4 class="not-margin">
+                    Seguro que deseas Reiniciar el <b>Proceso</b>
+                </h4>
+            </template>
+            <template #footer>
+                <div class="footer-dialog">
+                    <vs-button block @click="reiniciar(data.id)">
+                        Reiniciar
+                    </vs-button>
+                </div>
+            </template>
+        </vs-dialog>
         <vs-dialog v-model="comfirmApertura">
             <template #header>
                 <h4 class="not-margin">
@@ -195,7 +187,6 @@ export default {
 
         cancelPredas: false,
         motivoElim: '',
-        motivoReturn: '',
         cantidadElim: '',
         opciones: false,
         detail: [],
@@ -339,11 +330,10 @@ export default {
                 }
             }
         },
-        async reiniciar(){
+        async reiniciar(id){
             let token = this.$session.get('token')
             let json = {
-                "mensaje": this.motivoReturn,
-                "idHist": this.data.detalleMaquinada[0].id,
+                "idHist": id,
                 "idOrdenPrenda": "-1",
                 "cantidadCancela": "-1"
             };
