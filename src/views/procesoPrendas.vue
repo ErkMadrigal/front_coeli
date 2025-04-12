@@ -482,7 +482,7 @@ export default {
             if(data.status == 401){ this.activarReboot = true }
             if(data.status == 200){
                 this.iniciarProceso = false;
-
+                this.prendas = []
                 this.refresh()
                 this.modalIniciar = false
                 this.openNotification(`Exito: ${data.mensaje}`, `Se ha iniciado el proceso correctamente`, 'success', 'top-left',`<box-icon name='check' color="#fff"></box-icon>`)
