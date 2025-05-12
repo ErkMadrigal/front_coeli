@@ -54,6 +54,40 @@
                     </b-tab>
                     <b-tab title="Prendas Concluidas" @click="updatePage(200)">
                         <b-row>
+                            <b-col lg="12" md="12" sm="12">
+                                <!-- Transición para animar la expansión/contracción -->
+                                <transition name="scale-in-hor-left">
+                                    <b-card v-if="isExpanded" class="expanded-card">
+                                        <!-- Botón de cerrar -->
+                                        <div class="close-btn" @click="contractCard">
+                                            <box-icon name='x' color="#007bff"></box-icon>
+                                        </div>
+
+                                        <!-- Título "Buscar Orden" -->
+                                        <h4 class="mb-4">Buscar Orden</h4>
+
+                                        <!-- Campo de búsqueda -->
+                                        <vs-input
+                                            ref="buscarPrenda"
+                                            primary
+                                            class="mt-4"
+                                            block
+                                            type="text"
+                                            icon-after
+                                            v-model="searchQueryP"
+                                        >
+                                            <template #icon>
+                                                <box-icon name='search-alt-2' color="#007bff"></box-icon>
+                                            </template>
+                                        </vs-input>
+                                    </b-card>
+                                </transition>
+
+                                <!-- Ícono de lupa (solo visible cuando el card no está expandido) -->
+                                <div v-if="!isExpanded" class="icon-only" @click="expandCard">
+                                    <box-icon name='search-alt-2' color="#007bff"></box-icon>
+                                </div>
+                            </b-col>
                             <b-col lg="3" md="4" sm="6" v-for="(dt, i) in filteredConsultasP" :key="i">
                                 <ProcesandoComponent @updatePage="updatePage" :data="dt"></ProcesandoComponent>
                             </b-col>
@@ -139,6 +173,7 @@ export default {
                     // Buscar en todas las propiedades relevantes
                     return (
                         (consulta.prendas[0].nomCliente && consulta.prendas[0].nomCliente.toLowerCase().includes(query)) ||
+                        (consulta.prendas[0].folio && consulta.prendas[0].folio.toLowerCase().includes(query))||
                         (this.fecha(consulta.fechaEntrega) && this.fecha(consulta.fechaEntrega).toLowerCase().includes(query))||
                         (this.fecha(consulta.fechaRecepcion) && this.fecha(consulta.fechaRecepcion.toLowerCase()).includes(query))
                     );
@@ -147,6 +182,7 @@ export default {
                 // Si no hay texto de búsqueda, muestra todas las cards
                 this.filteredConsultasO = this.getDatos[0];
             }
+            console.log(this.filteredConsultasO)
 
 
         },
@@ -157,14 +193,10 @@ export default {
                     // Buscar en todas las propiedades relevantes
                     return (
                         (consulta.nomCliente && consulta.nomCliente.toLowerCase().includes(query)) ||
-                        (consulta.nombrePaso && consulta.nombrePaso.toLowerCase().includes(query)) ||
-                        (consulta.nombrePrenda && consulta.nombrePrenda.toLowerCase().includes(query))||
-                        (consulta.nombreSigPaso && consulta.nombreSigPaso.toLowerCase().includes(query))||
-                        (consulta.tipoLavado && consulta.tipoLavado.toLowerCase().includes(query))||
-                        (consulta.folio && consulta.folio.toLowerCase().includes(query))||
-                        (consulta.descripcionEstado && consulta.descripcionEstado.toLowerCase().includes(query))
-                        // (this.fecha(consulta.fechaEntrega) && this.fecha(consulta.fechaEntrega).toLowerCase().includes(query))||
-                        // (this.fecha(consulta.fhAlta) && this.fecha(consulta.fhAlta.toLowerCase()).includes(query))
+                        (consulta.prenda && consulta.prenda.toLowerCase().includes(query)) ||
+                        (consulta.folio && consulta.folio.toLowerCase().includes(query)) ||
+                        (consulta.idOrden !== undefined && consulta.idOrden !== null && consulta.idOrden.toString().includes(query)) ||
+                        (consulta.ultimoEstado && this.fecha(consulta.ultimoEstado).toLowerCase().includes(query))
                     );
                 });
             } else {

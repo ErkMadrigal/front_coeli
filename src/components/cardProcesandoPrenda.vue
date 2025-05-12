@@ -24,7 +24,7 @@
             </div>
             <!-- end -->
             <!-- <vs-button class="d-none" block flat primary @click="modalShowDetail=!modalShowDetail"> Detalles </vs-button> -->
-            <vs-button v-if=" data.autorizacion == null && data.requiereAuth && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="autorizar(data.id)"> Autorizar </vs-button>
+            <vs-button v-if=" data.autorizacion == null && data.requiereAuth && $session.get('roles').some(role => ['SISTEMAS', 'ADMIN'].includes(role))"  block flat primary  @click="viewMotivo =! viewMotivo"> Autorizar </vs-button>
             <vs-button v-if="data.requiereAuth && data.autorizacion != null" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
             <vs-button v-if="!data.requiereAuth && data.autorizacion == null" block flat danger @click="terminar(data.id)"> Terminar </vs-button>
             <vs-button v-if="$session.get('roles').some(role => ['SISTEMAS', 'ADMIN', 'CANCELACION'].includes(role))" block flat danger @click="cancel()"> Cancelar Prenda </vs-button>
@@ -161,6 +161,28 @@
             </template>
             <ConfirmComponent @confirm="cancelPrednas"/>
         </vs-dialog>
+
+        <vs-dialog v-model="viewMotivo">
+            <template #header>
+                <h3 class="not-margin">
+                    Motivo de la Autorizacion
+                </h3>
+            </template>
+            <div class="con-content">
+                <h4>
+                    <b>{{ data.motivo }}</b>
+                </h4>
+            </div>
+            
+             <template #footer>
+                <div class="footer-dialog">
+                    <vs-button block @click="autorizar(data.id)">
+                        Autorizar
+                    </vs-button>
+                </div>
+            </template>
+        </vs-dialog>
+
         <div v-if="activarReboot">
             <loginComponent :login="activarReboot"></loginComponent>
         </div>
@@ -184,7 +206,7 @@ export default {
         comfirm: false,
         comfirmApertura: false,
         modalReiniciar: false,
-
+        viewMotivo: false,
         cancelPredas: false,
         motivoElim: '',
         cantidadElim: '',

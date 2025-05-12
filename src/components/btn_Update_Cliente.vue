@@ -46,7 +46,7 @@
                             flat
                             :btnActualizar="btnElimina == 1"
                             @click="active2=!active2">
-                            Desactivar
+                            Eliminar
                         </vs-button>
                     </div>
                     <div v-else>

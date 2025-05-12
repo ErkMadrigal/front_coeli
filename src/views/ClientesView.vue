@@ -224,7 +224,8 @@ export default {
         },
         async mostraClientes(){
             this.items = []
-            fetchApi(this.url+'cliente/findAll', 'GET', this.$session.get('token'))
+            fetchApi(this.url+'cliente/findByEstado/1', 'GET', this.$session.get('token'))
+            // fetchApi(this.url+'cliente/findAll', 'GET', this.$session.get('token'))
             .then(data => {
                 if(data.status == 401){ this.activarReboot = true }
                 if(data.status == 200){
